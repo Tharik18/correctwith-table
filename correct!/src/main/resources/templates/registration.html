@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Registration Page</title>
+    <script>
+        function showForm(role) {
+            document.getElementById('teacherForm').style.display = role === 'teacher' ? 'block' : 'none';
+            document.getElementById('studentForm').style.display = role === 'student' ? 'block' : 'none';
+        }
+
+        async function fetchCourses() {
+            let response = await fetch('/api/registration/courses');
+            let courses = await response.json();
+            let courseSelect = document.getElementById('course');
+            courseSelect.innerHTML = '<option value="">Select Course</option>';
+            courses.forEach(course => {
+                courseSelect.innerHTML += `<option value="${course}">${course}</option>`;
+            });
+        }
+
+        async function showTeachers(course) {
+            let response = await fetch(`/api/registration/teachers/${course}`);
+            let teachers = await response.json();
+            let teacherSelect = document.getElementById('teacher');
+            teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+            teachers.forEach(teacher => {
+                teacherSelect.innerHTML += `<option value="${teacher.id}">${teacher.firstname} ${teacher.lastname}</option>`;
+            });
+        }
+
+        async function showAvailability(teacherId) {
+            let response = await fetch(`/api/registration/availability/${teacherId}`);
+            let availability = await response.json();
+            let timingSelect = document.getElementById('timing');
+            timingSelect.innerHTML = '<option value="">Select Timing</option>';
+            availability.forEach(time => {
+                timingSelect.innerHTML += `<option value="${time}">${time}</option>`;
+            });
+        }
+
+        async function registerStudent() {
+            let student = {
+                firstname: document.getElementById('studentFirstname').value,
+                lastname: document.getElementById('studentLastname').value,
+                email: document.getElementById('studentEmail').value,
+                password: document.getElementById('studentPassword').value,
+                phone: document.getElementById('studentPhone').value,
+                course: document.getElementById('course').value,
+                teacherId: document.getElementById('teacher').value,
+                timing: document.getElementById('timing').value
+            };
+
+            let response = await fetch('/api/registration/register/student', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(student)
+            });
+
+            let result = await response.text();
+            if (result === "Selected timing is not available. Kindly select another timing.") {
+                alert("Kindly select another timing.");
+            } else if (response.ok) {
+                alert(result);
+            } else {
+                alert("Failed to register student.");
+            }
+        }
+
+        async function registerTeacher() {
+            let teacher = {
+                firstname: document.getElementById('teacherFirstname').value,
+                lastname: document.getElementById('teacherLastname').value,
+                email: document.getElementById('teacherEmail').value,
+                phone: document.getElementById('teacherPhone').value,
+                courses: document.getElementById('teacherCourses').value.split(','),
+                availability: document.getElementById('teacherAvailability').value.split(',')
+            };
+
+            let response = await fetch('/api/registration/register/teacher', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(teacher)
+            });
+
+            if (response.ok) {
+                alert("Teacher registered successfully!");
+            } else {
+                alert("Failed to register teacher.");
+            }
+        }
+
+        window.onload = fetchCourses;
+    </script>
+</head>
+<body>
+    <h2>Register</h2>
+    <label for="role">Role:</label>
+    <select id="role" name="role" onchange="showForm(this.value)">
+        <option value="">Select Role</option>
+        <option value="teacher">Teacher</option>
+        <option value="student">Student</option>
+    </select>
+    
+    <div id="teacherForm" style="display:none;">
+        <h3>Teacher Registration</h3>
+        <label for="teacherFirstname">First Name:</label>
+        <input type="text" id="teacherFirstname" name="firstname"><br>
+        <label for="teacherLastname">Last Name:</label>
+        <input type="text" id="teacherLastname" name="lastname"><br>
+        <label for="teacherEmail">Email:</label>
+        <input type="email" id="teacherEmail" name="email"><br>
+        <label for="teacherPhone">Phone No:</label>
+        <input type="text" id="teacherPhone" name="phone"><br>
+        <label for="teacherCourses">Courses (comma separated):</label>
+        <input type="text" id="teacherCourses" name="courses"><br>
+        <label for="teacherAvailability">Timing Availability (comma separated):</label>
+        <input type="text" id="teacherAvailability" name="availability"><br>
+        <button onclick="registerTeacher()">Register as Teacher</button>
+    </div>
+
+    <div id="studentForm" style="display:none;">
+        <h3>Student Registration</h3>
+        <label for="studentFirstname">First Name:</label>
+        <input type="text" id="studentFirstname" name="firstname"><br>
+        <label for="studentLastname">Last Name:</label>
+        <input type="text" id="studentLastname" name="lastname"><br>
+        <label for="studentEmail">Email:</label>
+        <input type="email" id="studentEmail" name="email"><br>
+        <label for="studentPassword">Password:</label>
+        <input type="password" id="studentPassword" name="password"><br>
+        <label for="studentPhone">Phone No:</label>
+        <input type="text" id="studentPhone" name="phone"><br>
+        <label for="course">Course:</label>
+        <select id="course" name="course" onchange="showTeachers(this.value)">
+            <option value="">Select Course</option>
+        </select><br>
+        <label for="teacher">Teacher:</label>
+        <select id="teacher" name="teacher" onchange="showAvailability(this.value)">
+            <option value="">Select Teacher</option>
+        </select><br>
+        <label for="timing">Timing:</label>
+        <select id="timing" name="timing">
+            <option value="">Select Timing</option>
+        </select><br>
+        <button onclick="registerStudent()">Register as Student</button>
+    </div>
+</body>
+</html>
